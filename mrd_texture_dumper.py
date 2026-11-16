@@ -20,7 +20,7 @@
 # Textures are identified by block index only. Names are not used.
 import sys, os, struct, subprocess, csv, argparse
 import numpy as np
-
+import texture2ddecoder
 
 def morton_xy(m):
     x = y = 0
@@ -112,7 +112,6 @@ def kind_of(rec):
 
 def decode(lin, kind, w, h, swap_rb):
     from PIL import Image
-    import texture2ddecoder
     if kind == "rgba8":
         return Image.frombytes("RGBA", (w, h), lin.tobytes(), "raw", "BGRA" if swap_rb else "RGBA")
     ew, eh = ceil4(w), ceil4(h)
