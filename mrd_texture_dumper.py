@@ -8,7 +8,12 @@
 # Options:
 #   --only-diff   with --compare (or both files): only textures whose stored size differs between builds
 #   --indices 794,5,100-120   only these block indices
-#   --swap-rb     treat RGBA8 textures as BGRA
+#   --swap-rb     force every RGBA8 texture to be read as BGRA
+#   (RGBA8 textures whose record byte 0x54 is 2 are read as BGRA automatically; --no-auto-swap turns that off)
+#   --as bc3|bc5|bc1|bc7  experimental: decode the selected textures as this format instead of the detected one
+#   --mips        also write every mip level (NNNN_WxH_mipN.png) of the textures that have a chain
+#   --swap-variant3  obsolete (variant 3 is BC3, now detected automatically); kept so old command lines still work
+# The format comes from the record bytes (0x33, 0x54); unknown pairs are reported and skipped.
 #
 # Output (each folder only when that platform is dumped):
 #   out/ps4/NNNN_WxH.png        PS4 textures (Morton 8x8 tiles)
@@ -20,7 +25,7 @@
 # Textures are identified by block index only. Names are not used.
 import sys, os, struct, subprocess, csv, argparse
 import numpy as np
-import texture2ddecoder
+
 
 def morton_xy(m):
     x = y = 0
@@ -62,6 +67,52 @@ def switch_units(ew, eh, B, bhg, wg):
     return off // B
 
 
+def roundup(a, b):
+    return -(-a // b) * b
+
+
+def pow2ceil(n):
+    p = 1
+    while p < n:
+        p *= 2
+    return p
+
+
+def level_dims(w, h, n, is_bc):
+    lw, lh = max(w >> n, 1), max(h >> n, 1)
+    return lw, lh, ((lw + 3) // 4, (lh + 3) // 4) if is_bc else (lw, lh)
+
+
+def plan_switch(w, h, B, is_bc, b0, b1, levels):
+    """Per level (ew, eh, pitch_in_gobs, block_height, size_bytes) for the Switch layout (see the format notes)."""
+    out = []
+    for n in range(levels):
+        _, _, (ew, eh) = level_dims(w, h, n, is_bc)
+        wmin = -(-ew * B // 64)
+        if n == 0:
+            bh, wg = 1 << b0, roundup(wmin, 1 << b1)
+        else:
+            bh, wg = min(1 << b0, pow2ceil(-(-eh // 8))), wmin
+        out.append((ew, eh, wg, bh, wg * roundup(eh, 8 * bh) * 64))
+    return out
+
+
+def plan_ps4(w, h, B, is_bc, levels):
+    """Per level (ew, eh, size_bytes): levels packed tightly, each rounded up to whole 8x8-element tiles."""
+    out = []
+    for n in range(levels):
+        _, _, (ew, eh) = level_dims(w, h, n, is_bc)
+        out.append((ew, eh, pad8(ew) * pad8(eh) * B))
+    return out
+
+
+def untile_switch_level(data, ew, eh, B, wg, bh):
+    u = switch_units(ew, eh, B, bh, wg)
+    if (u.max() + 1) * B > len(data):
+        return None
+    return np.frombuffer(data, np.uint8, count=len(data) // B * B).reshape(-1, B)[u]
+
+
 def untile_switch(data, ew, eh, B, rec_bhg):
     """Block-linear -> (eh, ew, B) array. Tries the record's block height first, then smaller ones.
     The row pitch (in GOBs) is deduced from the data size when it fits exactly (padded sizes), else the minimum."""
@@ -99,26 +150,36 @@ def record(d, off):
     r = d[off - 192:off]
     w, h = struct.unpack_from("<HH", r, 0x34)
     return dict(w=w, h=h, fmt=r[0x33], dsize=struct.unpack_from("<I", r, 0x6c)[0],
-                csize=struct.unpack_from("<I", r, 0x70)[0], f74=r[0x74])
+                csize=struct.unpack_from("<I", r, 0x70)[0], f74=r[0x74], f75=r[0x75], v54=r[0x54], levels=max(r[0x65], 1))
+
+
+# (record byte 0x33, record byte 0x54) -> (codec, bytes per element, red/blue swapped)
+FORMATS = {(7, 6): ("bc7", 16, False), (0, 6): ("bc7", 16, False), (7, 3): ("bc3", 16, False),
+           (3, 2): ("bc1", 8, False), (0, 1): ("rgba8", 4, False), (0, 2): ("rgba8", 4, True)}
 
 
 def kind_of(rec):
-    if rec["fmt"] == 3:
-        return "bc1", 8
-    if rec["fmt"] == 0 and rec["dsize"] / (rec["w"] * rec["h"]) >= 3.9:
-        return "rgba8", 4
-    return "bc7", 16          # format byte 07, and byte 00 with 1 byte/pixel, are both BC7
+    """-> (kind, bytes per element, stored as BGRA). Raises on a (0x33, 0x54) pair that has not been seen."""
+    try:
+        return FORMATS[(rec["fmt"], rec["v54"])]
+    except KeyError:
+        raise ValueError(f"unknown format pair (0x33={rec['fmt']:#04x}, 0x54={rec['v54']:#04x})")
 
 
 def decode(lin, kind, w, h, swap_rb):
     from PIL import Image
     if kind == "rgba8":
         return Image.frombytes("RGBA", (w, h), lin.tobytes(), "raw", "BGRA" if swap_rb else "RGBA")
+    import texture2ddecoder
     ew, eh = ceil4(w), ceil4(h)
     pw, ph = ew * 4, eh * 4
-    fn = texture2ddecoder.decode_bc1 if kind == "bc1" else texture2ddecoder.decode_bc7
-    img = Image.frombytes("RGBA", (pw, ph), fn(lin.tobytes(), pw, ph), "raw", "BGRA")
-    return img.crop((0, 0, w, h))
+    fn = {"bc1": texture2ddecoder.decode_bc1, "bc3": texture2ddecoder.decode_bc3,
+          "bc5": texture2ddecoder.decode_bc5, "bc7": texture2ddecoder.decode_bc7}[kind]
+    img = Image.frombytes("RGBA", (pw, ph), fn(lin.tobytes(), pw, ph), "raw", "BGRA").crop((0, 0, w, h))
+    if swap_rb:
+        r, g, b, a = img.split()
+        img = Image.merge("RGBA", (b, g, r, a))
+    return img
 
 
 def decompress(yk, dat, off, tmp):
@@ -139,19 +200,50 @@ def parse_indices(text, n):
     return sorted(i for i in out if 0 <= i < n)
 
 
-def dump_one(plat, dat, d, off, rec, kind, B, yk, tmp, swap_rb):
-    """Returns (PIL image, note). Raises on failure."""
+def dump_one(plat, dat, d, off, rec, kind, B, yk, tmp, swap_rb, mips=False):
+    """Returns (PIL image of the base level, note, list of (level, image) for levels 1.. when mips=True)."""
     data = decompress(yk, dat, off, tmp)
-    w, h = rec["w"], rec["h"]
-    ew, eh = (w, h) if kind == "rgba8" else (ceil4(w), ceil4(h))
+    w, h, levels, is_bc = rec["w"], rec["h"], rec["levels"], kind != "rgba8"
+    ew, eh = level_dims(w, h, 0, is_bc)[2]
+    extra, note = [], ""
     if plat == "ps4":
-        lin = untile_ps4(data, ew, eh, B)
-        note = "" if lin is not None else "data too short"
-    else:
-        lin, note = untile_switch(data, ew, eh, B, 1 << min(rec["f74"], 4))
+        plan = plan_ps4(w, h, B, is_bc, levels)
+        if sum(p[2] for p in plan) > len(data):
+            plan = plan_ps4(w, h, B, is_bc, 1)          # chain does not fit; base level only
+            if levels > 1:
+                note = "mip chain layout does not fit the data; base level only"
+        off_ = 0
+        for n, (lew, leh, size) in enumerate(plan):
+            lin = untile_ps4(data[off_:off_ + size], lew, leh, B)
+            off_ += size
+            if lin is None:
+                raise ValueError("ps4: data too short")
+            lw, lh = level_dims(w, h, n, is_bc)[:2]
+            if n == 0:
+                base = decode(lin, kind, lw, lh, swap_rb)
+            elif mips:
+                extra.append((n, decode(lin, kind, lw, lh, swap_rb)))
+        return base, note, extra
+    plan = plan_switch(w, h, B, is_bc, min(rec["f74"], 4), rec["f75"], levels)
+    if sum(p[4] for p in plan) == len(data):             # the record explains the whole data block
+        off_ = 0
+        for n, (lew, leh, wg, bh, size) in enumerate(plan):
+            lin = untile_switch_level(data[off_:off_ + size], lew, leh, B, wg, bh)
+            off_ += size
+            if lin is None:
+                raise ValueError("switch: data too short")
+            lw, lh = level_dims(w, h, n, is_bc)[:2]
+            if n == 0:
+                base = decode(lin, kind, lw, lh, swap_rb)
+            elif mips:
+                extra.append((n, decode(lin, kind, lw, lh, swap_rb)))
+        return base, note, extra
+    # layout not explained by the record (blocks 139 and 294 are known cases): old search, base level only
+    lin, note = untile_switch(data, ew, eh, B, 1 << min(rec["f74"], 4))
     if lin is None:
-        raise ValueError(f"{plat}: {note}")
-    return decode(lin, kind, w, h, swap_rb), note
+        raise ValueError(f"switch: {note}")
+    note = (note + "; " if note else "") + "layout does not match the record; base level guessed" + ("" if levels == 1 else f" ({levels} levels not split)")
+    return decode(lin, kind, w, h, swap_rb), note, []
 
 
 def main(argv=None):
@@ -164,7 +256,12 @@ def main(argv=None):
     ap.add_argument("--compare", action="store_true", help="with both files: side-by-side images and compare.csv")
     ap.add_argument("--only-diff", action="store_true", help="only textures whose stored size differs (needs both files)")
     ap.add_argument("--indices", help="only these block indices, e.g. 794,5,100-120")
-    ap.add_argument("--swap-rb", action="store_true", help="RGBA8 textures as BGRA")
+    ap.add_argument("--swap-rb", action="store_true", help="force RGBA8 textures to be read as BGRA (all of them)")
+    ap.add_argument("--no-auto-swap", action="store_true", help="do not swap red/blue for RGBA8 textures whose record byte 0x54 is 2")
+    ap.add_argument("--as", dest="force_kind", choices=["bc1", "bc3", "bc5", "bc7"],
+                    help="experimental: decode every selected texture as this block format instead of the detected one")
+    ap.add_argument("--mips", action="store_true", help="also write every mip level of textures that have a chain")
+    ap.add_argument("--swap-variant3", action="store_true", help="obsolete, ignored (variant 3 is BC3 and is detected automatically)")
     a = ap.parse_args(argv)
     if not (a.ps4 or a.switch):
         ap.error("give --ps4 and/or --switch")
@@ -188,7 +285,7 @@ def main(argv=None):
     n = len(next(iter(plats.values()))["blocks"])
     todo = parse_indices(a.indices, n) if a.indices else list(range(n))
 
-    idx_rows = {p: [["idx", "kind", "width", "height", "ykcmp_bytes", "decompressed_bytes", "ratio", "note"]] for p in plats}
+    idx_rows = {p: [["idx", "kind", "width", "height", "ykcmp_bytes", "decompressed_bytes", "ratio", "note", "variant", "levels"]] for p in plats}
     cmp_rows = [["idx", "kind", "ps4_w", "ps4_h", "sw_w", "sw_h", "ps4_csize", "ps4_dsize", "ps4_ratio",
                  "sw_csize", "sw_dsize", "sw_ratio", "identical_to_ps4", "psnr_db", "alpha_psnr_db", "note"]]
     tot = {p: [0, 0] for p in plats}      # [compressed, decompressed]
@@ -196,8 +293,16 @@ def main(argv=None):
 
     for k, idx in enumerate(todo):
         recs = {p: record(v["d"], v["blocks"][idx]) for p, v in plats.items()}
-        # the PS4 record decides the format when both builds are present; it has no padding
-        kind, B = kind_of(recs["ps4"] if "ps4" in recs else recs["switch"])
+        # the PS4 record decides the format when both builds are present
+        try:
+            kind, B, bgra = kind_of(recs["ps4"] if "ps4" in recs else recs["switch"])
+        except ValueError as e:
+            print(f"  block {idx}: FAILED: {e}", file=sys.stderr, flush=True)
+            for p in plats:
+                idx_rows[p].append([idx, "?", recs[p]["w"], recs[p]["h"], recs[p]["csize"], recs[p]["dsize"], "", f"FAILED: {e}", "", ""])
+            continue
+        if a.force_kind:
+            kind, B = a.force_kind, {"bc1": 8, "bc3": 16, "bc5": 16, "bc7": 16}[a.force_kind]
         diff = both and (recs["ps4"]["w"], recs["ps4"]["h"]) != (recs["switch"]["w"], recs["switch"]["h"])
         if a.only_diff and not diff:
             continue
@@ -205,17 +310,23 @@ def main(argv=None):
         for p, v in plats.items():
             rec = recs[p]
             note = ""
+            swap = kind == "rgba8" and (a.swap_rb or (not a.no_auto_swap and bgra))
             try:
-                img, note = dump_one(p, v["path"], v["d"], v["blocks"][idx], rec, kind, B, a.ykcmp, tmp, a.swap_rb)
+                img, note, extra = dump_one(p, v["path"], v["d"], v["blocks"][idx], rec, kind, B, a.ykcmp, tmp, swap, a.mips)
+                if swap:
+                    note = (note + "; " if note else "") + f"red/blue swapped (record byte 0x54 = {rec['v54']})"
                 img.save(os.path.join(a.out, p, f"{idx:04d}_{rec['w']}x{rec['h']}.png"))
+                for n, mimg in extra:
+                    mimg.save(os.path.join(a.out, p, f"{idx:04d}_{rec['w']}x{rec['h']}_mip{n}.png"))
                 imgs[p] = img
             except Exception as e:
-                note = f"FAILED: {e}"
+                note = f"FAILED: {type(e).__name__}: {e}"
+                print(f"  {p} block {idx}: {note}", file=sys.stderr, flush=True)
             if note:
                 notes.append(f"{p}: {note}")
             tot[p][0] += rec["csize"]; tot[p][1] += rec["dsize"]
             idx_rows[p].append([idx, kind, rec["w"], rec["h"], rec["csize"], rec["dsize"],
-                                round(rec["csize"] / rec["dsize"], 3), note])
+                                round(rec["csize"] / rec["dsize"], 3), note, rec["v54"], rec["levels"]])
         if a.compare:
             rp, rs = recs["ps4"], recs["switch"]
             ident, psnr, apsnr = "", "", ""
