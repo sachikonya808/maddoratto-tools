@@ -16,9 +16,12 @@ from rhythm_dat import (
     CHART_SIZE,
     SYMBOLS,
     UNKNOWN_SYMBOL,
+    decode_tokens,
     find_chart,
+    length_field,
     parse_directory,
     rebuild,
+    stored_length_field,
     symbols_to_tokens,
     verify,
 )
@@ -101,6 +104,12 @@ def main():
         help="Replace Hard charts (with H suffix)"
     )
     parser.add_argument(
+        "--bpm",
+        type=float,
+        help="song BPM: also rewrite each replaced chart's length field "
+             "(non-empty tokens * 720000 / BPM). Without it the old value is kept"
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Build and verify everything but do not write the output file"
@@ -141,8 +150,23 @@ def main():
             f"new={new_size} bytes ({new_size - old_size:+d})"
         )
 
-    result = rebuild(original, charts, replacements)
-    verify(original, charts, result, replacements)
+    lengths = {}
+
+    for chart_name, tokens in replacements.items():
+        chart = find_chart(charts, chart_name)
+        used_new = sum(1 for t in tokens if t != b"")
+        used_old = sum(1 for t in decode_tokens(original, chart) if t != b"")
+
+        if args.bpm:
+            lengths[chart_name] = length_field(tokens, args.bpm)
+            print(f"{chart_name}: length field {stored_length_field(original, chart)} "
+                  f"-> {lengths[chart_name]}")
+        elif used_new != used_old:
+            print(f"NOTE: {chart_name} has {used_new} non-empty tokens (was {used_old}) "
+                  "but its length field is kept; pass --bpm to recompute it")
+
+    result = rebuild(original, charts, replacements, lengths or None)
+    verify(original, charts, result, replacements, lengths=lengths or None)
 
     print(f"\nFile size: {len(original):,} -> {len(result):,} "
           f"({len(result) - len(original):+d})")
