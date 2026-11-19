@@ -16,3 +16,28 @@
 - Take Rhythm_new.dat, Sound_new.dat and move them into your LayeredFS Data/Database folder, rename them to Rhythm.dat and Sound.dat
 - If you changed the song, you need to also add your new BGM044.acb into your LayeredFS Data/Sound folder
 - Test in-game
+
+## Known token encodings
+
+| Observed symbol / form | Bytes | Length | Text symbol (tools) | Count in file | Theorized use |
+|---|---|---:|:---:|---:|---:|
+| `.` (empty token) | `00` | 1 | `.` | 441,080 | Skip |
+| `M` | `E3 83 BB 00` | 4 | `M` | 78,610 | Spacer |
+| `O` | `E2 97 8B 00` | 4 | `O` | 24,592 | Regular note
+| `P` | `E2 97 8F 00` | 4 | `P` | 2,655 | Signal for a Red note |
+| O plus modifier / X-like form | `E2 97 8B E2 96 B2 38 00` | 8 | `X` | 257 | Unknown |
+| P plus modifier | `E2 97 8F E2 96 B2 38 00` | 8 | `Y` | 3 | Unknown |
+| M plus modifier | `E3 83 BB E2 96 B2 38 00` | 8 | `Z` | 2 | Unknown |
+| O plus modifier (short form) | `E2 97 8B E2 96 B2 00` | 7 | `S` | 1 | Unknown |
+
+#### Observed patterns:
+
+#### Example 1:
+- OMMM <- Regular notes
+- OMMM
+- OMMM => ( ( ( O ) ) )
+
+#### Example 2:
+- OMMM
+- OMPM <- Red note
+- OMMM => ( (-( ( O ) )-) )
