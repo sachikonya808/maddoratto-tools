@@ -12,6 +12,7 @@
 - Once you're done with the charts, add them to Rhythm.dat using ``python rhythm_addsong.py --target BGM044 --normal normal.txt --hard hard.txt --bpm N``, where N is your New BPM value (Untested!)
 - If you're not editing the charts, just use ``python rhythm_addsong.py --target BGM044 --from-song BGM015``, this will clone the chart from BGM015 (MAD RAT, ALIVE?) into our new entry (BGM044)
 - With sounddat.py use ``python.exe .\sounddat.py clone .\Sound.dat Sound_new.dat --from 0x0F --id 0x2C --title "Title of the Song" --composer "Composer" --bpm N --str0c BGM015``
+- !!! PROBE YOUR SAVE DATA WITH probe.py ``python probe.py System 0x2C --sound Sound_new.dat`` !!! This is necessary because if you skip this, the new song will appear locked "???"
 - Take Rhythm_new.dat, Sound_new.dat and move them into your LayeredFS Data/Database folder, rename them to Rhythm.dat and Sound.dat
 - If you changed the song, you need to also add your new BGM044.acb into your LayeredFS Data/Sound folder
 - Test in-game
