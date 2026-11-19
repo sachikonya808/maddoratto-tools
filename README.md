@@ -17,7 +17,7 @@
 - If you changed the song, you need to also add your new BGM044.acb into your LayeredFS Data/Sound folder
 - Test in-game
 
-## Known token encodings
+## Known token encodings (To edit charts)
 
 | Observed symbol / form | Bytes | Length | Text symbol (tools) | Count in file | Theorized use |
 |---|---|---:|:---:|---:|---:|
