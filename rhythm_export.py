@@ -1,6 +1,6 @@
 # Usage: python rhythm_export.py --target BGM038
-# Output: python rhythm_export.py --target BGM038 --output name.txt
-# Hard mode Charts: python rhythm_export.py --target BGM038 --output name.txt --hard
+# Output: python rhythm_export.py --target BGM038 --output normal.txt
+# Hard mode Charts: python rhythm_export.py --target BGM038 --output hard.txt --hard
 
 
 from pathlib import Path
