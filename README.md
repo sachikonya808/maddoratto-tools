@@ -17,6 +17,18 @@
 - If you changed the song, you need to also add your new BGM044.acb into your LayeredFS Data/Sound folder
 - Test in-game
 
+## How to pack a new mod:
+
+Download ``ExampleMod.zip`` and extract it.<br>
+
+Edit the fields in pack.json:
+- Title: Song's title
+- Composer: Song's composer
+- BPM: Song's BPM (if you don't add a custom chart, use the same BPM as the song you're cloning to avoid chart issues!)
+- CustomCharts: true/false depending if you're adding custom charts (true) or reusing the custom ones (false)
+
+Add your custom ``pack.png``, ``sound.acb``, and ``normal.txt``/``hard.txt`` charts if you are making custom charts. Once you're done, compress the files back into a .zip and add it to your mods/songs folder to test.
+
 ## Known token encodings (Chart editing)
 
 | Observed symbol / form | Bytes | Length | Text symbol (tools) | Count in file | Theorized use |
