@@ -29,6 +29,14 @@ Edit the fields in pack.json:
 
 Add your custom ``pack.png``, ``sound.acb``, and ``normal.txt``/``hard.txt`` charts if you are making custom charts. Once you're done, compress the files back into a .zip and add it to your mods/songs folder to test.
 
+## Fields to edit on your custom .xml
+
+- SampleCount
+- Length = (SampleCount/48000)*1000
+- StartPosition = (Sum of previous length values (0 -> 0 | 1 -> 0 | 2 -> 0 + 1 | 3 -> 0 + 1 + 2)
+
+Anything else can cause odd behavior! 
+
 ## Known token encodings (Chart editing)
 
 | Observed symbol / form | Bytes | Length | Text symbol (tools) | Count in file | Theorized use |
