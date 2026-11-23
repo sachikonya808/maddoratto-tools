@@ -33,7 +33,7 @@ Add your custom ``pack.png``, ``sound.acb``, and ``normal.txt``/``hard.txt`` cha
 
 - SampleCount
 - Length = (SampleCount/48000)*1000
-- StartPosition = (Sum of previous length values (0 -> 0 | 1 -> 0 | 2 -> 0 + 1 | 3 -> 0 + 1 + 2)
+- StartPosition = (Sum of previous length values (0 -> 0 | 1 -> length(0) | 2 -> length(0) + length(1) | 3 -> length(0) + length(1) + length(3))
 
 Anything else can cause odd behavior! 
 
