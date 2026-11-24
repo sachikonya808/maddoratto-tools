@@ -8,6 +8,7 @@
 - Pick a song you want to use as a base! (In this example I will use "MAD RAT, ALIVE?", which has a numeric ID of 15 and a hex value of 0x0F
 - Base+DLC songs start at BGM001 and end at BGM043, so BGM044 and onwards are free (In this case I will pick 44, which has a hex value of 2C)
 - If you're editing the charts, use ``python rhythm_export.py --target BGM015 --output normal.txt`` to dump the chart for Normal mode; dump the ones from Hard mode with ``python rhythm_export.py --target BGM015 --output hard.txt --hard``
+- [Create your custom sound.acb file](SOUND.md)
 
 #### [RattoLauncher](https://github.com/sachikonya808/maddoratto-pc/releases)
 - Create a new mod_song.zip (Check instructions below)
