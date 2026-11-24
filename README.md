@@ -5,4 +5,11 @@
 ### [Sound editing](SOUND.md)
 
 ### Useful tools: 
+
+#### Compressor/Decompressor
 - YKCMP: https://github.com/iltrof/ykcmp
+
+#### Custom songs
+- KwasTools: https://github.com/ThisKwasior/KwasTools
+- CriCodecs: https://github.com/Youjose/CriCodecs
+- VGAudio: https://github.com/Thealexbarney/VGAudio
