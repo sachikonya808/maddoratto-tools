@@ -56,16 +56,18 @@ Anything else can cause odd behavior!
 
 ## Known token encodings (Chart editing)
 
-| Observed symbol / form | Bytes | Length | Text symbol (tools) | Count in file | Theorized use |
+| Observed symbol / form | Bytes | Length | Text symbol (tools) | Count in file | Use |
 |---|---|---:|:---:|---:|---:|
-| `.` (empty token) | `00` | 1 | `.` | 441,080 | Skip |
-| `M` | `E3 83 BB 00` | 4 | `M` | 78,610 | Spacer |
-| `O` | `E2 97 8B 00` | 4 | `O` | 24,592 | Regular note
-| `P` | `E2 97 8F 00` | 4 | `P` | 2,655 | Signal for a Red note |
-| O plus modifier / X-like form | `E2 97 8B E2 96 B2 38 00` | 8 | `X` | 257 | Unknown |
+| `.` (empty token) | `00` | 1 | `.` | 441,080 | Skip (unconfirmed) |
+| `M` | `E3 83 BB 00` | 4 | `M` | 78,610 | Silence (confirmed) |
+| `O` | `E2 97 8B 00` | 4 | `O` | 24,592 | End beat (confirmed) |
+| `P` | `E2 97 8F 00` | 4 | `P` | 2,655 | Start beat (confirmed) |
+| O plus modifier / X-like form | `E2 97 8B E2 96 B2 38 00` | 8 | `X` | 257 | First beat of the song (unconfirmed) |
 | P plus modifier | `E2 97 8F E2 96 B2 38 00` | 8 | `Y` | 3 | Unknown |
 | M plus modifier | `E3 83 BB E2 96 B2 38 00` | 8 | `Z` | 2 | Unknown |
 | O plus modifier (short form) | `E2 97 8B E2 96 B2 00` | 7 | `S` | 1 | Unknown |
+
+# ALWAYS REFER TO THE BASE GAME CHARTS
 
 #### Observed patterns:
 
