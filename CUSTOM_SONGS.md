@@ -37,8 +37,8 @@ Edit the fields in pack.json:
 - Composer: Song's composer
 - BPM: Song's BPM (if you don't add a custom chart, use the same BPM as the song you're cloning to avoid chart issues!)
 - CustomCharts: true/false depending if you're adding custom charts (true) or reusing the custom ones (false)
-- NormalDifficulty: The normal difficulty of the song (displayed as stars on the Selection Screen, remove if you want to clone the original ones)
-- HardDifficulty: The normal difficulty of the song (displayed as stars on the Selection Screen, remove if you want to clone the original ones)
+- NormalDifficulty: The normal difficulty of the song (displayed as stars on the Selection Screen, goes from 1 to 5, defaults to 1)
+- HardDifficulty: The normal difficulty of the song (displayed as stars on the Selection Screen, goes from 1 to 5, defaults to 2)
 
 Add your custom ``pack.png``, ``sound.acb``, and ``normal.txt``/``hard.txt`` charts if you are making custom charts. Once you're done, compress the files back into a .zip and add it to your mods/songs folder to test.
 
