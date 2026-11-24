@@ -17,8 +17,8 @@ Record layout (0x78 bytes = 30 u32 fields, every byte accounted for):
     +10  str_10   string          "BGMxxx_Select"
     +14..+30  chart_ids[8]        Rhythm.dat chart IDs: block 1-4 normal, then 1-4 Hard
                                   (song*100 + (10 if Hard) + block); 0 = no such chart
-    +34  num_34                   small number 0-3   (probably a difficulty level)
-    +38  num_38                   small number 0-5   (probably a difficulty level)
+    +34  num_34                   Normal difficulty, stars 1-3 in the game's songs
+    +38  num_38                   Hard difficulty, stars 2-5 in the game's songs (both shown as 1-5 stars)
     +3C  title[4]                 4 language slots
     +4C  composer[4] / +50 ...    interleaved: composer, composer2 for each language slot
     +6C  bpm                      100-180 (probably BPM)
@@ -31,7 +31,8 @@ Commands:
     sounddat.py build  songs.json Sound_new.dat     JSON -> Sound.dat (rebuilds the string pool)
     sounddat.py clone  Sound.dat Out.dat --from 0x29 --id 0x2C --title "Name" --composer "Me" --bpm 140
 
-clone options: --keep-names --keep-charts (safe test record), --sort N, --insert-at INDEX,
+clone options: --normal-diff N --hard-diff N (difficulty stars, num_34 / num_38),
+               --keep-names --keep-charts (safe test record), --sort N, --insert-at INDEX,
                --set-sort ID=SORT (repeatable), --rhythm Rhythm.dat (chart ID check),
                --str04/--str08/--str0c/--str10 NAME (override one name field),
                --allow-duplicate-id (experiments only; the game looks songs up by ID)
@@ -327,6 +328,13 @@ def cmd_clone(args):
     if args.bpm is not None:
         new["bpm"] = args.bpm
 
+    # difficulty in stars (1-5): num_34 = Normal, num_38 = Hard (confirmed against the in-game stars)
+    if args.normal_level is not None:
+        new["num_34"] = args.normal_level
+
+    if args.hard_level is not None:
+        new["num_38"] = args.hard_level
+
     taken = [r["sort"] for r in records if r["selectable"] == 1]
     new["sort"] = args.sort if args.sort is not None else max(taken) + 1
     new["selectable"] = 1
@@ -379,6 +387,8 @@ def main():
     c.add_argument("--title")
     c.add_argument("--composer")
     c.add_argument("--bpm", type=int)
+    c.add_argument("--normal-diff", type=int, help="Normal difficulty stars (num_34, 1-5)")
+    c.add_argument("--hard-diff", type=int, help="Hard difficulty stars (num_38, 1-5)")
     c.add_argument("--sort", type=lambda x: int(x, 0))
     c.add_argument("--keep-names", action="store_true",
                    help="keep the source song's BGMxxx / BGMxxx_Select names "
