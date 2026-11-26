@@ -1,9 +1,9 @@
 # Mad Rat Dead texture dumper for Anime_EN.dat (PS4 and/or Switch).
 #
-#   PS4 only:      python mrd_textures.py ykcmp.exe --ps4 Anime_EN_PS4.dat --out out
-#   Switch only:   python mrd_textures.py ykcmp.exe --switch Anime_EN_Switch.dat --out out
-#   Both:          python mrd_textures.py ykcmp.exe --ps4 A.dat --switch B.dat --out out
-#   Both + compare python mrd_textures.py ykcmp.exe --ps4 A.dat --switch B.dat --out out --compare
+#   PS4 only:      python mrd_texture_dumper.py ykcmp.exe --ps4 Anime_EN_PS4.dat --out out
+#   Switch only:   python mrd_texture_dumper.py ykcmp.exe --switch Anime_EN_Switch.dat --out out
+#   Both:          python mrd_texture_dumper.py ykcmp.exe --ps4 A.dat --switch B.dat --out out
+#   Both + compare python mrd_texture_dumper.py ykcmp.exe --ps4 A.dat --switch B.dat --out out --compare
 #
 # Options:
 #   --only-diff   with --compare (or both files): only textures whose stored size differs between builds
