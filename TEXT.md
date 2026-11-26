@@ -1,7 +1,7 @@
 # TEXT
 ## Dumping the text strings
 - Download ``talkdat.py`` and ``talkrebuild.py``
-- Run ``python talkdat.py Talk.dat talk.json``
+- Run ``python talkdat.py Talk.dat talk.json`` (You'll need a copy of Talk.dat in the same directory as the script!)
 
 This will output an editable talk.json file
 
