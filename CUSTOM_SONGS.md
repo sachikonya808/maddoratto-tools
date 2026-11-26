@@ -36,6 +36,7 @@ Edit the fields in pack.json:
 - Title: Song's title
 - Composer: Song's composer
 - BPM: Song's BPM (if you don't add a custom chart, use the same BPM as the song you're cloning to avoid chart issues!)
+- BaseID: Numeric ID of the song you cloned (ie. 15)
 - CustomCharts: true/false depending if you're adding custom charts (true) or reusing the custom ones (false)
 - NormalDifficulty: The normal difficulty of the song (displayed as stars on the Selection Screen, goes from 1 to 5, defaults to 1)
 - HardDifficulty: The normal difficulty of the song (displayed as stars on the Selection Screen, goes from 1 to 5, defaults to 2)
