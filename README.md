@@ -3,6 +3,7 @@
 ### [Custom Songs](CUSTOM_SONGS.md)
 ### [Sound editing](SOUND.md)
 ### [Texture editing](TEXTURES.md)
+### [Text editing](TEXT.md)
 
 ### Useful tools: 
 

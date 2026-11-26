@@ -15,6 +15,7 @@
 - Move the mod_song.zip to %APPDATA%/Roaming/RattoLauncher/mods/songs
 - In the launcher, navigate to the Songs tab, and hit "ADD SONGS"
 - !!! PROBE YOUR SAVE DATA WITH THE "UNLOCK SAVE" BUTTON !!! This is necessary because if you skip this, the new song will appear locked "???"
+- Test in-game
 
 #### Python scripts only
 - Once you're done with the charts, add them to Rhythm.dat using ``python rhythm_addsong.py --target BGM044 --normal normal.txt --hard hard.txt --bpm N``, where N is your New BPM value (Untested!)
@@ -23,9 +24,6 @@
 - !!! PROBE YOUR SAVE DATA WITH probe.py ``python probe.py System 0x2C --sound Sound_new.dat`` !!! This is necessary because if you skip this, the new song will appear locked "???"
 - Take Rhythm_new.dat, Sound_new.dat and move them into your LayeredFS Data/Database folder, rename them to Rhythm.dat and Sound.dat
 - If you changed the song, you need to also add your new BGM044.acb into your LayeredFS Data/Sound folder
-
-<br>
-
 - Test in-game
 
 ## How to pack a new mod:
