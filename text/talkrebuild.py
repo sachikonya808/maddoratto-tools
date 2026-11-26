@@ -4,13 +4,11 @@
 import json
 from talkdat import load, build
 
-hdr, flag, ents = load("Talk.dat")        # original, used to keep the storage order
+flag, ents = load("Talk.dat")
 edited = json.load(open("talk.json", encoding="utf8"))
 
-# copy the edited fields back onto the loaded entries
 for e, j in zip(ents, edited):
-    e["text"] = j["text"]
-    e["u"] = j["u"]
-    e["tail"] = j["tail"]
+    e["pages"] = j["pages"]
+    e["end"] = j["end"]
 
 open("Talk_new.dat", "wb").write(build(ents, flag))
