@@ -2,9 +2,9 @@
 
 ## Dumping the textures
 - Download ``mrd_texture_dumper.py`` and [ykcmp.exe](https://github.com/iltrof/ykcmp)
-- Switch version: Run ``python mrd_texture_dumper.py ykcmp.exe --switch Anime_EN_Switch.dat --out out``
-- PS4 version: Run ``python mrd_texture_dumper.py ykcmp.exe --ps4 Anime_EN_PS4.dat --out out``
-- Single file extract: Run ``python mrd_texture_dumper.py ykcmp.exe --switch Anime_EN_Switch.dat --out out --indices 67``
+- Switch version: Run ``python mrd_texture_dumper.py ykcmp.exe --switch Anime_EN.dat --out out``
+- PS4 version: Run ``python mrd_texture_dumper.py ykcmp.exe --ps4 Anime_EN.dat --out out``
+- Single file extract: Run ``python mrd_texture_dumper.py ykcmp.exe --switch Anime_EN.dat --out out --indices 67``
 
 This will output one or more texture files in .png format, ready for editing
 
